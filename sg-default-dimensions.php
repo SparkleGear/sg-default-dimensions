@@ -82,7 +82,9 @@ add_action('woocommerce_before_cart', 'bbloomer_print_cart_weight');
 
 function bbloomer_print_cart_weight( $posted ) {
 	global $woocommerce;
-	$notice = 'Your cart weight is: ' . $woocommerce->cart->cart_contents_weight . get_option('woocommerce_weight_unit');
+
+	$weight = $woocommerce->cart->get_cart_contents_weight();
+	$notice = 'Your cart weight is: ' . number_format($weight, 1) . ' ' . get_option('woocommerce_weight_unit');
 	if( is_cart() ) {
 		wc_print_notice( $notice, 'notice' );
 	} else {
