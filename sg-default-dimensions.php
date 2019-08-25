@@ -70,8 +70,8 @@ if ( ! function_exists( 'xa_product_default_height' ) ) {
 
 
 // To set Default Weight
-add_filter( 'woocommerce_product_get_weight', 'xa_product_default_weight', 10, 2 );
-add_filter( 'woocommerce_product_variation_get_weight', 'xa_product_default_weight', 10, 2 );    // For variable product variations
+add_filter( 'woocommerce_product_get_weight', 'xa_product_default_weight', 99, 2 );
+add_filter( 'woocommerce_product_variation_get_weight', 'xa_product_default_weight', 99, 2 );    // For variable product variations
 
 if ( ! function_exists( 'xa_product_default_weight' ) ) {
 	/**
@@ -102,6 +102,11 @@ if ( ! function_exists( 'xa_product_default_weight' ) ) {
 			}
 		}
 
+		if ( empty($weight ) && is_a($wc_product_thing,'WC_Product_Variation' ) ) {
+			$product = wc_get_product( $wc_product_thing->get_parent_id() );
+			$weight = (float)$product->get_weight();
+		}
+
 		if ( empty( $weight ) ) {
 			$sg_default_weight = get_option( 'sg_default_weight', 0.5 );
 			$weight            = $sg_default_weight;
@@ -112,7 +117,30 @@ if ( ! function_exists( 'xa_product_default_weight' ) ) {
 }
 
 
-add_action( 'woocommerce_before_checkout_form', 'bbloomer_print_cart_weight' );
+add_filter( 'woocommerce_cart_contents_weight', 'sg_get_cart_contents_weight', 99, 1 );
+/**
+ * Get weight of items in the cart.
+ *
+ * @since 2.5.0
+ * @return int
+ */
+function sg_get_cart_contents_weight($weight) {
+	$weight = 0;
+	global $woocommerce;
+	$cart = $woocommerce->cart->get_cart();
+
+	foreach ( $cart as $cart_item_key => $values ) {
+			$w = $values['data']->get_weight() ;
+			error_log( __FUNCTION__ . ' ' . $values['data']->get_title() . ' has weight ' . $w );
+			$weight += (float) $w * $values['quantity'];
+	}
+
+	return $weight;
+}
+
+
+
+add_action( 'woocommerce_before_checkout_form', 'bb loomer_print_cart_weight' );
 add_action( 'woocommerce_before_cart', 'bbloomer_print_cart_weight' );
 
 function bbloomer_print_cart_weight( $posted ) {
@@ -126,3 +154,28 @@ function bbloomer_print_cart_weight( $posted ) {
 		wc_add_notice( $notice, 'notice' );
 	}
 }
+
+
+/**
+ * Plugin Name: WooCommerce Composite Products - Variable Container Weight
+ * Plugin URI: http://woocommerce.com/products/composite-products/
+ * Description: Use this snippet to have the weight of composited products added to the container weight when the Non-Bundled Shipping option is unchecked.
+ * Version: 1.0
+ * Author: SomewhereWarm
+ * Author URI: http://somewherewarm.gr/
+ * Developer: Manos Psychogyiopoulos
+ *
+ * Requires at least: 3.8
+ * Tested up to: 4.8
+ *
+ * Copyright: © 2015 Manos Psychogyiopoulos (psyx@somewherewarm.gr).
+ * License: GNU General Public License v3.0
+ * License URI: http://www.gnu.org/licenses/gpl-3.0.html
+ */
+
+// To use this snippet, download this file into your plugins directory and activate it, or copy the code under this line into the functions.php file of your (child) theme.
+
+//add_filter( 'woocommerce_composited_product_has_bundled_weight', 'wc_cp_bundled_weight', 10, 4 );
+//function wc_cp_bundled_weight( $has_bundled_weight, $product, $component_id, $composite ) {
+//	return true;
+//}
